@@ -1,7 +1,7 @@
 import 'dart:convert'; // Backend: Untuk mengonversi data JSON
 import 'package:flutter/material.dart'; // UI: Untuk menggunakan widget Flutter
 import 'package:location/location.dart'; // Backend: Untuk mengakses lokasi perangkat
-import 'package:presensi_app/models/save_responses.dart'; // Backend: Model untuk menyimpan respons dari API
+import 'package:presensi_app/models/save_response.dart'; // Backend: Model untuk menyimpan respons dari API
 import 'package:shared_preferences/shared_preferences.dart'; // Backend: Untuk menyimpan data lokal di perangkat
 import 'package:syncfusion_flutter_maps/maps.dart'; // UI: Untuk menampilkan peta
 import 'package:http/http.dart' as myHttp; // Backend: Untuk melakukan HTTP request
@@ -71,7 +71,7 @@ class _SavePageState extends State<SavePage> {
     try {
       // Melakukan permintaan POST ke API untuk menyimpan presensi
       var response = await myHttp.post(
-        Uri.parse("http://10.0.2.2:8000/api/save-presensi"), // Backend: URL API untuk menyimpan presensi
+        Uri.parse("http://127.0.0.1:8000/api/save-presensi"), // Backend: URL API untuk menyimpan presensi
         body: body,
         headers: headers,
       );

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart'; // UI: Mengimpor paket material untuk me
 import 'package:http/http.dart' as myHttp; // Backend: Mengimpor paket http untuk melakukan HTTP request
 import 'package:shared_preferences/shared_preferences.dart'; // Backend: Mengimpor paket untuk menyimpan data pengguna secara lokal
 import 'package:presensi_app/home_page.dart'; // UI: Mengimpor halaman utama setelah login
-import 'package:presensi_app/models/login_responses.dart'; // Backend: Mengimpor model respon login untuk memproses data login
+import 'package:presensi_app/models/login_response.dart'; // Backend: Mengimpor model respon login untuk memproses data login
 
 // Halaman login
 class LoginPage extends StatefulWidget {
@@ -60,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
 
   // Fungsi untuk melakukan login
   Future login(email, password) async {
-    LoginResponseModel?
+    LoginResponseModels?
         loginResponseModel; // Backend: Mendeklarasikan model respon login
     Map<String, String> body = {
       "email": email,
@@ -69,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
 
     // Melakukan POST request ke API login
     var response = await myHttp
-        .post(Uri.parse('http://10.0.2.2:8000/api/login'), body: body);
+        .post(Uri.parse('http://127.0.0.1:8000/api/login'), body: body);
 
     // Memeriksa status kode dari respon
     if (response.statusCode == 401) {
@@ -79,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
               "Email atau password salah"))); // UI: Menampilkan snackbar error
     } else {
       // Backend: Jika login berhasil, proses data respon
-      loginResponseModel = LoginResponseModel.fromJson(json.decode(
+      loginResponseModel = LoginResponseModels.fromJson(json.decode(
           response.body)); // Backend: Mengonversi respon JSON menjadi model
       print('HASIL ${response.body}'); // Backend: Mencetak hasil respon
       saveUser(

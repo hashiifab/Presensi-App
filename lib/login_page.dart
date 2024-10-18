@@ -1,162 +1,215 @@
-import 'dart:convert'; // Backend: Mengimpor paket untuk mengonversi data ke dan dari format JSON
-import 'package:flutter/material.dart'; // UI: Mengimpor paket material untuk membangun UI Flutter
-import 'package:http/http.dart' as myHttp; // Backend: Mengimpor paket http untuk melakukan HTTP request
-import 'package:shared_preferences/shared_preferences.dart'; // Backend: Mengimpor paket untuk menyimpan data pengguna secara lokal
-import 'package:presensi_app/home_page.dart'; // UI: Mengimpor halaman utama setelah login
-import 'package:presensi_app/models/login_response.dart'; // Backend: Mengimpor model respon login untuk memproses data login
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as myHttp;
+import 'package:presensi_app/reset_password_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:presensi_app/home_page.dart';
+import 'package:presensi_app/models/login_response.dart';
+import 'utils/api_helper.dart';
 
-// Halaman login
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key}); // UI: Konstruktor halaman login
+  const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() =>
-      _LoginPageState(); // UI: Mengembalikan state untuk LoginPage
+  State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final Future<SharedPreferences> _prefs = SharedPreferences.getInstance(); // Backend: Inisialisasi SharedPreferences untuk menyimpan data lokal
-  TextEditingController emailController = TextEditingController(); // UI: Kontroler untuk input email
-  TextEditingController passwordController = TextEditingController(); // UI: Kontroler untuk input password
-  late Future<String> _name, _token; // Backend: Variabel untuk menyimpan nama dan token secara asinkron
+  final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  late Future<String> _name, _token;
 
   @override
   void initState() {
-    super.initState(); // UI: Memanggil fungsi initState dari superclass
+    super.initState();
 
-    // Mengambil token dari SharedPreferences
     _token = _prefs.then((SharedPreferences prefs) {
-      return prefs.getString("token") ??
-          ""; // Backend: Mengembalikan token jika ada, jika tidak, kembali string kosong
+      return prefs.getString("token") ?? "";
     });
 
-    // Mengambil nama dari SharedPreferences
     _name = _prefs.then((SharedPreferences prefs) {
-      return prefs.getString("name") ??
-          ""; // Backend: Mengembalikan nama jika ada, jika tidak, kembali string kosong
+      return prefs.getString("name") ?? "";
     });
 
-    // Memeriksa apakah token dan nama ada
     checkToken(_token, _name);
   }
 
-  // Fungsi untuk memeriksa keberadaan token dan nama
   checkToken(token, name) async {
-    String tokenStr = await token; // Backend: Menunggu token menjadi string
-    String nameStr = await name; // Backend: Menunggu nama menjadi string
+    String tokenStr = await token;
+    String nameStr = await name;
     if (tokenStr != "" && nameStr != "") {
-      // Jika token dan nama tidak kosong
       Future.delayed(const Duration(seconds: 1), () async {
-        // UI: Menunggu 1 detik sebelum mengarahkan ke halaman utama
-        Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) =>
-                    const HomePage())) // UI: Mengarahkan ke halaman utama
+        Navigator.of(context)
+            .push(MaterialPageRoute(builder: (context) => const HomePage()))
             .then((value) {
-          setState(() {}); // UI: Memperbarui tampilan jika ada perubahan
+          setState(() {});
         });
       });
     }
   }
 
-  // Fungsi untuk melakukan login
   Future login(email, password) async {
-    LoginResponseModels?
-        loginResponseModel; // Backend: Mendeklarasikan model respon login
-    Map<String, String> body = {
-      "email": email,
-      "password": password
-    }; // Backend: Membuat body request dengan email dan password
+    LoginResponseModels? loginResponseModel;
+    Map<String, String> body = {"email": email, "password": password};
 
-    // Melakukan POST request ke API login
-    var response = await myHttp
-        .post(Uri.parse('http://127.0.0.1:8000/api/login'), body: body);
+    try {
+      var response = await myHttp.post(
+        Uri.parse('${ApiHelper.getApiUrl()}/login'), // Menggunakan ApiHelper
+        body: body,
+      );
 
-    // Memeriksa status kode dari respon
-    if (response.statusCode == 401) {
-      // UI: Jika status 401, berarti login gagal
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-              "Email atau password salah"))); // UI: Menampilkan snackbar error
-    } else {
-      // Backend: Jika login berhasil, proses data respon
-      loginResponseModel = LoginResponseModels.fromJson(json.decode(
-          response.body)); // Backend: Mengonversi respon JSON menjadi model
-      print('HASIL ${response.body}'); // Backend: Mencetak hasil respon
-      saveUser(
-          loginResponseModel.data.token,
-          loginResponseModel
-              .data.name); // Backend: Menyimpan token dan nama pengguna
+      if (response.statusCode == 401) {
+        _showSnackBar("Email atau password salah", Colors.red);
+      } else {
+        loginResponseModel =
+            LoginResponseModels.fromJson(json.decode(response.body));
+        saveUser(loginResponseModel.data.token, loginResponseModel.data.name);
+      }
+    } catch (e) {
+      _showSnackBar("Kesalahan saat login: $e", Colors.red);
     }
   }
 
-  // Fungsi untuk menyimpan user di SharedPreferences
   Future saveUser(token, name) async {
     try {
-      print("${"LEWAT SINI " + token} | " +
-          name); // Backend: Mencetak token dan nama
-      final SharedPreferences pref =
-          await _prefs; // Backend: Mengambil SharedPreferences
-      pref.setString("name", name); // Backend: Menyimpan nama pengguna
-      pref.setString("token", token); // Backend: Menyimpan token pengguna
+      final SharedPreferences pref = await _prefs;
+      pref.setString("name", name);
+      pref.setString("token", token);
 
-      // UI: Mengarahkan ke halaman utama setelah menyimpan data
       Navigator.of(context)
           .push(MaterialPageRoute(builder: (context) => const HomePage()))
           .then((value) {
-        setState(() {}); // UI: Memperbarui tampilan
+        setState(() {});
       });
     } catch (err) {
-      // UI: Menangani error jika terjadi
-      print('ERROR :$err'); // Backend: Mencetak error
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(err.toString()))); // UI: Menampilkan snackbar error
+      _showSnackBar(err.toString(), Colors.red);
     }
   }
 
-  // Fungsi untuk membangun tampilan UI
+  // Fungsi untuk menampilkan SnackBar yang lebih menarik
+  void _showSnackBar(String message, Color color) {
+    final snackBar = SnackBar(
+      content: Row(
+        children: [
+          Icon(Icons.info_outline, color: Colors.white),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+      backgroundColor: color,
+      duration: const Duration(seconds: 3),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-          // UI: Menggunakan SafeArea untuk menghindari area tidak aman pada layar
-          child: Padding(
-        padding: const EdgeInsets.all(
-            8.0), // UI: Memberikan padding di sekitar tampilan
         child: Center(
-          child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start, // UI: Mengatur alignment kolom
-            mainAxisAlignment:
-                MainAxisAlignment.center, // UI: Mengatur alignment vertikal
-            children: [
-              const Center(child: Text("LOGIN")), // UI: Judul halaman login
-              const SizedBox(height: 20), // UI: Memberikan jarak vertikal
-              const Text("Email"), // UI: Label untuk input email
-              TextField(
-                controller:
-                    emailController, // UI: Menghubungkan kontroler email
-              ),
-              const SizedBox(height: 20), // UI: Memberikan jarak vertikal
-              const Text("Password"), // UI: Label untuk input password
-              TextField(
-                controller:
-                    passwordController, // UI: Menghubungkan kontroler password
-                obscureText: true, // UI: Menyembunyikan input password
-              ),
-              const SizedBox(height: 20), // UI: Memberikan jarak vertikal
-              ElevatedButton(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo atau Ikon Aplikasi
+                Icon(Icons.lock_outline, size: 100, color: Colors.blue[800]),
+                const SizedBox(height: 20),
+
+                // Judul halaman
+                const Text(
+                  "Welcome Back!",
+                  style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87),
+                ),
+                const SizedBox(height: 8),
+
+                // Subjudul
+                const Text(
+                  "Log in to your account",
+                  style: TextStyle(fontSize: 16, color: Colors.black54),
+                ),
+                const SizedBox(height: 32),
+
+                // Input Email
+                TextField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    labelText: "Email",
+                    prefixIcon: const Icon(Icons.email),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Input Password
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: "Password",
+                    prefixIcon: const Icon(Icons.lock),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Tombol Login
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      login(emailController.text, passwordController.text);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue[800],
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text(
+                      "Log In",
+                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Teks tambahan untuk forgot password
+                TextButton(
                   onPressed: () {
-                    // UI: Menangani event ketika tombol login ditekan
-                    login(
-                        emailController.text,
-                        passwordController
-                            .text); // Backend: Memanggil fungsi login dengan input dari user
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              const ResetPasswordPage()), // Navigasi ke halaman reset password
+                    );
                   },
-                  child: const Text("Masuk")) // UI: Teks pada tombol login
-            ],
+                  child: const Text(
+                    "Forgot your password?",
+                    style: TextStyle(color: Colors.blue),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      )),
+      ),
     );
   }
+  
 }

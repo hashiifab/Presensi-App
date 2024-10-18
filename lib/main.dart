@@ -1,17 +1,7 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:online_shop/core/configs/theme/app_theme.dart';
-import 'package:online_shop/presentation/splash/bloc/splash_cubit.dart';
-import 'package:online_shop/presentation/splash/pages/splash.dart';
-import 'package:online_shop/service_locator.dart';
+import 'package:presensi_app/login_page.dart';
 
-import 'firebase_options.dart';
-
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await initializeDependencies();
+void main() {
   runApp(const MyApp());
 }
 
@@ -20,12 +10,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => SplashCubit()..appStarted(),
-      child: MaterialApp(
-          theme: AppTheme.appTheme,
-          debugShowCheckedModeBanner: false,
-          home: const SplashPage()),
+    return const MaterialApp(
+      home: LoginPage(),
     );
   }
 }
